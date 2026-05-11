@@ -1,0 +1,15 @@
+# Requirements for NASS - Nexuss Audio Substrate System
+
+# Core Dependencies
+numpy>=1.20.0
+scipy>=1.7.0
+librosa>=0.9.0
+matplotlib>=3.4.0
+
+# Optional: For enhanced performance
+# numba>=0.55.0
+
+# Development Dependencies
+# pytest>=7.0.0
+# black>=22.0.0
+# flake8>=4.0.0
