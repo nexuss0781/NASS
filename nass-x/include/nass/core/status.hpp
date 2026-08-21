@@ -6,7 +6,7 @@
 #include <variant>
 #include "nass/core/types.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Result type for operations that can fail
 template<typename T>
@@ -117,6 +117,6 @@ inline std::string status_to_string(Status status) {
     }
 }
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_CORE_STATUS_HPP

@@ -9,7 +9,7 @@
 #include "nass/core/config.hpp"
 #include "nass/pipeline/worker.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Processing task for pipeline
 struct ProcessTask {
@@ -101,6 +101,6 @@ private:
     size_t overlap_samples_;
 };
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_PIPELINE_ENGINE_HPP

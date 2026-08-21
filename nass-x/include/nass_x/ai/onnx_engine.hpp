@@ -44,4 +44,4 @@ private:
     std::vector<TensorInfo> extract_tensor_info(const std::vector<std::string>& names, bool is_input);
 };
 
-} // namespace nass_x::ai
+} // namespace nass_x::tensor_x::ai

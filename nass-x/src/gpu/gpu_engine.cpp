@@ -196,4 +196,4 @@ void GpuEngine::execute_stft_async(const float* audio_batch,
     }).detach();
 }
 
-} // namespace nass_x::gpu
+} // namespace nass_x::tensor_x::gpu

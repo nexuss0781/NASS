@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "nass/tensor/tensor.hpp"
+#include "nass_x/tensor/tensor.hpp"
 #include "nass/memory/arena.hpp"
 #include "nass_x/audio_reader.hpp"
 #include "nass_x/audio_writer.hpp"
@@ -220,4 +220,4 @@ private:
     bool work_stealing_enabled_;
 };
 
-} // namespace nass_x
+} // namespace nass_x::tensor_x

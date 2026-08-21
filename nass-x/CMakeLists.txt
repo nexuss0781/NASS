@@ -176,6 +176,10 @@ endif()
 set(AI_SOURCES
     src/ai/neural_engine.cpp
     src/ai/audio_processor.cpp
+    src/ai/source_separator.cpp
+    src/ai/neural_codec.cpp
+    src/ai/super_resolver.cpp
+    src/ai/streaming_inferencer.cpp
 )
 if(USE_TENSORRT)
     list(APPEND AI_SOURCES src/ai/tensorrt_engine.cpp)

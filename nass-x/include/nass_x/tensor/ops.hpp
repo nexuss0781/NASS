@@ -3,9 +3,9 @@
 
 #include <cmath>
 #include <algorithm>
-#include "nass/tensor/tensor.hpp"
+#include "nass_x/tensor/tensor.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Tensor operations namespace
 namespace tensor_ops {
@@ -211,6 +211,6 @@ void matmul(const Tensor<T, 2>& A, const Tensor<T, 2>& B,
 
 } // namespace tensor_ops
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_TENSOR_OPS_HPP

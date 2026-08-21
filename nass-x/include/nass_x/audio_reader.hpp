@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "nass/tensor/tensor.hpp"
+#include "nass_x/tensor/tensor.hpp"
 #include "nass/memory/arena.hpp"
 #include <string>
 #include <memory>
@@ -218,4 +218,4 @@ private:
     std::vector<std::thread> decode_threads_;
 };
 
-} // namespace nass_x
+} // namespace nass_x::tensor_x

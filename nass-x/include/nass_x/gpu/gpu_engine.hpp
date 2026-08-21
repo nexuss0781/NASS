@@ -94,4 +94,4 @@ private:
     void free_buffers();
 };
 
-} // namespace nass_x::gpu
+} // namespace nass_x::tensor_x::gpu

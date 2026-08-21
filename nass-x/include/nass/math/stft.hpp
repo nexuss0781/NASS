@@ -9,7 +9,7 @@
 #include "nass/memory/buffer.hpp"
 #include "nass/math/fft_simd.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Short-Time Fourier Transform engine
 class STFT {
@@ -76,6 +76,6 @@ private:
     std::vector<std::unique_ptr<STFT>> engines_;
 };
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_MATH_STFT_HPP

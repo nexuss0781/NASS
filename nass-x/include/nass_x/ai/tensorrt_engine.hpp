@@ -45,4 +45,4 @@ private:
     void cleanup();
 };
 
-} // namespace nass_x::ai
+} // namespace nass_x::tensor_x::ai

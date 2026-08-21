@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "nass/tensor/tensor.hpp"
+#include "nass_x/tensor/tensor.hpp"
 #include "nass/memory/arena.hpp"
 #include <string>
 #include <memory>
@@ -171,4 +171,4 @@ private:
     int64_t pts_;
 };
 
-} // namespace nass_x
+} // namespace nass_x::tensor_x

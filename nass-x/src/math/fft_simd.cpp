@@ -16,7 +16,7 @@
 #define NASSED_SIMD_LEVEL SIMDLevel::NONE
 #endif
 
-namespace nass {
+namespace nass_x::tensor {
 
 SIMDLevel detect_simd_level() {
     // Runtime detection could use CPUID here
@@ -303,4 +303,4 @@ void OverlapAdd::reset() {
     // Reset internal state if needed
 }
 
-} // namespace nass
+} // namespace nass_x::tensor

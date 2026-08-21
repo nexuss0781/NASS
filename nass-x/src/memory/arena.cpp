@@ -6,7 +6,7 @@
 #include <sys/mman.h>
 #endif
 
-namespace nass {
+namespace nass_x::tensor {
 
 Arena::Arena(size_t size_bytes, bool use_huge_pages)
     : buffer_(nullptr)
@@ -127,4 +127,4 @@ ThreadLocalArena& ThreadLocalArena::instance(size_t arena_size_mb) {
     return instance;
 }
 
-} // namespace nass
+} // namespace nass_x::tensor

@@ -2,7 +2,7 @@
 
 #include "neural_engine.hpp"
 #include "../audio_reader.hpp"
-#include "nass/tensor/tensor.hpp"
+#include "../../nass_x/tensor/tensor.hpp"
 #include <string>
 #include <vector>
 #include <memory>
@@ -11,6 +11,9 @@
 
 namespace nass_x::ai {
 
+// Bring Tensor into namespace for convenience (using default float type)
+using Tensor = nass_x::tensor::Tensor<float, 8>;
+
 /**
  * @brief Converts audio buffers to neural network input tensors
  * Handles normalization, chunking, and format conversion
@@ -18,15 +21,16 @@ namespace nass_x::ai {
 class AudioPreprocessor {
 public:
     struct Config {
-        float sample_rate{48000.0f};
-        int channels{1};
-        int hop_size{512};
-        int window_size{2048};
-        bool normalize{true};
-        float norm_factor{32768.0f}; // For int16 -> float32
+        float sample_rate = 48000.0f;
+        int channels = 1;
+        int hop_size = 512;
+        int window_size = 2048;
+        bool normalize = true;
+        float norm_factor = 32768.0f; // For int16 -> float32
     };
-
-    explicit AudioPreprocessor(const Config& config = Config());
+    
+    explicit AudioPreprocessor();
+    explicit AudioPreprocessor(const Config& config);
 
     /**
      * @brief Convert audio frame to model input tensor
@@ -116,4 +120,4 @@ private:
     mutable std::mutex mutex_;
 };
 
-} // namespace nass_x::ai
+} // namespace nass_x::tensor_x::ai

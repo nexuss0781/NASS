@@ -1,7 +1,7 @@
 #include "nass/core/config.hpp"
 #include <thread>
 
-namespace nass {
+namespace nass_x::tensor {
 
 int EngineConfig::detect_simd_level() {
 #if defined(__AVX512F__)
@@ -15,4 +15,4 @@ int EngineConfig::detect_simd_level() {
 #endif
 }
 
-} // namespace nass
+} // namespace nass_x::tensor

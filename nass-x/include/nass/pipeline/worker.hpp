@@ -10,7 +10,7 @@
 #include "nass/core/types.hpp"
 #include "nass/math/stft.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Worker node for parallel processing
 class WorkerNode {
@@ -79,6 +79,6 @@ private:
     std::condition_variable completion_cv_;
 };
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_PIPELINE_WORKER_HPP

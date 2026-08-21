@@ -110,4 +110,4 @@ private:
     cufftHandle plan_;
 };
 
-} // namespace nass_x::gpu
+} // namespace nass_x::tensor_x::gpu

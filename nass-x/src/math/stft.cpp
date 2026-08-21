@@ -1,7 +1,7 @@
 #include "nass/math/stft.hpp"
 #include <cstring>
 
-namespace nass {
+namespace nass_x::tensor {
 
 STFT::STFT(const STFTConfig& config)
     : config_(config)
@@ -142,4 +142,4 @@ Result<std::vector<Spectrogram>> BatchSTFT::transform_batch(
     return Result<std::vector<Spectrogram>>(results);
 }
 
-} // namespace nass
+} // namespace nass_x::tensor

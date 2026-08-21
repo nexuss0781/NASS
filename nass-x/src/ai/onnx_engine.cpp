@@ -173,4 +173,4 @@ std::vector<TensorInfo> OnnxEngine::extract_tensor_info(
     return info;
 }
 
-} // namespace nass_x::ai
+} // namespace nass_x::tensor_x::ai

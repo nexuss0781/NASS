@@ -1,12 +1,15 @@
 #pragma once
 
-#include "nass/tensor/tensor.hpp"
+#include "../../nass_x/tensor/tensor.hpp"
 #include <string>
 #include <vector>
 #include <memory>
 #include <functional>
 
 namespace nass_x::ai {
+
+// Bring Tensor into namespace (using float, 8 max dims as default)
+using Tensor = nass_x::tensor::Tensor<float, 8>;
 
 /**
  * @brief Metadata for model inputs/outputs
@@ -62,4 +65,4 @@ public:
  */
 std::unique_ptr<NeuralEngine> create_engine(const std::string& backend_type);
 
-} // namespace nass_x::ai
+} // namespace nass_x::tensor_x::ai

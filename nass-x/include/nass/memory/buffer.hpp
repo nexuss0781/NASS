@@ -6,7 +6,7 @@
 #include "nass/core/types.hpp"
 #include "nass/memory/arena.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Managed buffer with optional arena allocation
 template<typename T>
@@ -153,6 +153,6 @@ using DoubleBuffer = Buffer<Float64>;
 using Int16Buffer = Buffer<Int16>;
 using ComplexFloatBuffer = Buffer<ComplexFloat>;
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_MEMORY_BUFFER_HPP

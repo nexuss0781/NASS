@@ -42,4 +42,4 @@ std::unique_ptr<NeuralEngine> create_engine(const std::string& backend_type) {
 #endif
 }
 
-} // namespace nass_x::ai
+} // namespace nass_x::tensor_x::ai

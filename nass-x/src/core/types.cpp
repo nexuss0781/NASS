@@ -1,6 +1,6 @@
 // Core types - header-only implementations
 #include "nass/core/types.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 // No additional implementation needed
-} // namespace nass
+} // namespace nass_x::tensor

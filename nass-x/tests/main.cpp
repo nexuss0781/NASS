@@ -5,7 +5,7 @@
 #include "nass/memory/arena.hpp"
 #include "nass/math/stft.hpp"
 #include "nass/math/istft.hpp"
-#include "nass/tensor/tensor.hpp"
+#include "nass_x/tensor/tensor.hpp"
 
 using namespace nass;
 

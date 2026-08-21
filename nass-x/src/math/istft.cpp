@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cmath>
 
-namespace nass {
+namespace nass_x::tensor {
 
 ISTFT::ISTFT(const STFTConfig& config)
     : config_(config)
@@ -157,4 +157,4 @@ bool ReconstructionValidator::is_perfect(Float32 error, Float32 tolerance) const
     return error >= 0.0f && error <= tolerance;
 }
 
-} // namespace nass
+} // namespace nass_x::tensor

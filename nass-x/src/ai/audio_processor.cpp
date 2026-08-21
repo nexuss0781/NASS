@@ -14,26 +14,34 @@ AudioPreprocessor::AudioPreprocessor(const Config& config) : config_(config) {}
 
 Tensor AudioPreprocessor::audio_to_tensor(const float* audio_data, size_t num_samples) {
     // Create tensor with shape [1, channels, samples] or [1, samples] for mono
-    std::vector<int64_t> shape;
     if (config_.channels > 1) {
-        shape = {1, config_.channels, static_cast<int64_t>(num_samples / config_.channels)};
-    } else {
-        shape = {1, static_cast<int64_t>(num_samples)};
-    }
-    
-    Tensor output(shape, nass_x::DType::FLOAT32);
-    float* out_data = static_cast<float*>(output.data());
-    
-    if (config_.normalize) {
-        // Apply normalization
-        for (size_t i = 0; i < num_samples; ++i) {
-            out_data[i] = audio_data[i] / config_.norm_factor;
+        Tensor output(1, config_.channels, num_samples / config_.channels);
+        float* out_data = output.data();
+        
+        if (config_.normalize) {
+            // Apply normalization
+            for (size_t i = 0; i < num_samples; ++i) {
+                out_data[i] = audio_data[i] / config_.norm_factor;
+            }
+        } else {
+            std::memcpy(out_data, audio_data, num_samples * sizeof(float));
         }
+        
+        return output;
     } else {
-        std::memcpy(out_data, audio_data, num_samples * sizeof(float));
+        Tensor output(1, num_samples);
+        float* out_data = output.data();
+        
+        if (config_.normalize) {
+            for (size_t i = 0; i < num_samples; ++i) {
+                out_data[i] = audio_data[i] / config_.norm_factor;
+            }
+        } else {
+            std::memcpy(out_data, audio_data, num_samples * sizeof(float));
+        }
+        
+        return output;
     }
-    
-    return output;
 }
 
 void AudioPreprocessor::tensor_to_audio(const Tensor& output_tensor, float* audio_buffer, size_t& num_samples) {
@@ -165,4 +173,4 @@ size_t ModelManager::get_total_vram_usage_mb() const {
     return total;
 }
 
-} // namespace nass_x::ai
+} // namespace nass_x::tensor_x::ai

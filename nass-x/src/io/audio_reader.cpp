@@ -499,4 +499,4 @@ void AudioReader::close() {
     hw_accel_enabled_ = false;
 }
 
-} // namespace nass_x
+} // namespace nass_x::tensor_x

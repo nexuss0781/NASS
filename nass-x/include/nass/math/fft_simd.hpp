@@ -6,7 +6,7 @@
 #include "nass/core/types.hpp"
 #include "nass/memory/buffer.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // SIMD level detection
 enum class SIMDLevel {
@@ -109,6 +109,6 @@ private:
     Buffer<Float32> normalization_buffer_;
 };
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_MATH_FFT_SIMD_HPP

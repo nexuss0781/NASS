@@ -208,4 +208,4 @@ void TensorRTEngine::cleanup() {
     runtime_ = nullptr;
 }
 
-} // namespace nass_x::ai
+} // namespace nass_x::tensor_x::ai

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Precision types
 using Float32 = float;
@@ -96,6 +96,6 @@ struct Spectrogram {
     }
 };
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_CORE_TYPES_HPP

@@ -102,4 +102,4 @@ private:
     cudaStream_t stream_;
 };
 
-} // namespace nass_x::gpu
+} // namespace nass_x::tensor_x::gpu

@@ -6,7 +6,7 @@
 #include <thread>
 #include "nass/core/types.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Global configuration for NASS-X engine
 struct EngineConfig {
@@ -74,6 +74,6 @@ private:
     EngineConfig config_;
 };
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_CORE_CONFIG_HPP

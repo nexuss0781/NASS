@@ -1,7 +1,7 @@
 #include "nass/pipeline/engine.hpp"
 #include <chrono>
 
-namespace nass {
+namespace nass_x::tensor {
 
 PipelineEngine::PipelineEngine(const EngineConfig& config)
     : config_(config)
@@ -199,4 +199,4 @@ Result<std::vector<Spectrogram>> ChunkedProcessor::process_stream(
     return Result<std::vector<Spectrogram>>(results);
 }
 
-} // namespace nass
+} // namespace nass_x::tensor

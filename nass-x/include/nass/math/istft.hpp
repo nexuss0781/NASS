@@ -9,7 +9,7 @@
 #include "nass/math/fft_simd.hpp"
 #include "nass/math/stft.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Inverse Short-Time Fourier Transform engine
 class ISTFT {
@@ -71,6 +71,6 @@ private:
     Buffer<Float32> temp_buffer_;
 };
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_MATH_ISTFT_HPP

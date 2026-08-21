@@ -1,6 +1,6 @@
 #include "nass/pipeline/worker.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 WorkerNode::WorkerNode(size_t worker_id)
     : worker_id_(worker_id)
@@ -110,4 +110,4 @@ void ThreadPool::shutdown() {
     }
 }
 
-} // namespace nass
+} // namespace nass_x::tensor

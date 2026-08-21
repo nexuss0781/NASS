@@ -10,7 +10,7 @@
 #include "nass/core/types.hpp"
 #include "nass/memory/arena.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Multi-dimensional tensor with strided access
 template<typename T, size_t MaxDims = 4>
@@ -285,6 +285,6 @@ using Int16Tensor = Tensor<Int16>;
 // Spectrogram tensor (frames x bins)
 using SpectrogramTensor = Tensor<ComplexFloat, 2>;
 
-} // namespace nass
+} // namespace nass_x::tensor_x::tensor
 
 #endif // NASS_TENSOR_TENSOR_HPP

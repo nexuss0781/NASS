@@ -7,7 +7,7 @@
 #include <memory>
 #include "nass/core/types.hpp"
 
-namespace nass {
+namespace nass_x::tensor {
 
 // Cache line size for alignment (typically 64 bytes)
 constexpr size_t CACHE_LINE_SIZE = 64;
@@ -99,6 +99,6 @@ inline void aligned_free(void* ptr) {
 #endif
 }
 
-} // namespace nass
+} // namespace nass_x::tensor
 
 #endif // NASS_MEMORY_ARENA_HPP
