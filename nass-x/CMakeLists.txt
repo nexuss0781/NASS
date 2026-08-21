@@ -84,6 +84,47 @@ if(USE_CUDA)
     endif()
 endif()
 
+# Optional: TensorRT (Phase 4 - AGI)
+option(USE_TENSORRT "Use NVIDIA TensorRT for AI inference" OFF)
+if(USE_TENSORRT)
+    find_path(TENSORRT_INCLUDE_DIR NvInfer.h PATHS /usr/include /usr/local/include)
+    find_library(TENSORRT_LIBRARY nvinfer PATHS /usr/lib /usr/local/lib)
+    find_library(TENSORRT_PARSER_LIBRARY nvonnxparser PATHS /usr/lib /usr/local/lib)
+    
+    if(TENSORRT_INCLUDE_DIR AND TENSORRT_LIBRARY)
+        message(STATUS "TensorRT found")
+        add_definitions(-DNASS_X_USE_TENSORRT)
+        include_directories(${TENSORRT_INCLUDE_DIR})
+    else()
+        message(WARNING "TensorRT not found, AI inference limited to ONNX Runtime")
+        set(USE_TENSORRT OFF)
+    endif()
+endif()
+
+# Optional: ONNX Runtime (Phase 4 - AGI)
+option(USE_ONNX "Use ONNX Runtime for AI inference" OFF)
+if(USE_ONNX)
+    find_path(ONNX_INCLUDE_DIR onnxruntime_cxx_api.h PATHS /usr/include/onnxruntime /usr/local/include/onnxruntime)
+    find_library(ONNX_LIBRARY onnxruntime PATHS /usr/lib /usr/local/lib)
+    
+    if(ONNX_INCLUDE_DIR AND ONNX_LIBRARY)
+        message(STATUS "ONNX Runtime found")
+        add_definitions(-DNASS_X_USE_ONNX)
+        include_directories(${ONNX_INCLUDE_DIR})
+    else()
+        # Try pkg-config
+        pkg_check_modules(ONNXRuntime QUIET onnxruntime)
+        if(ONNXRuntime_FOUND)
+            message(STATUS "ONNX Runtime found via pkg-config")
+            add_definitions(-DNASS_X_USE_ONNX)
+            include_directories(${ONNXRuntime_INCLUDE_DIRS})
+        else()
+            message(WARNING "ONNX Runtime not found, AI features disabled")
+            set(USE_ONNX OFF)
+        endif()
+    endif()
+endif()
+
 # Source files
 set(IO_SOURCES
     src/io/audio_reader.cpp
@@ -131,6 +172,18 @@ if(USE_CUDA)
     )
 endif()
 
+# AI sources (Phase 4 - AGI Neural Integration)
+set(AI_SOURCES
+    src/ai/neural_engine.cpp
+    src/ai/audio_processor.cpp
+)
+if(USE_TENSORRT)
+    list(APPEND AI_SOURCES src/ai/tensorrt_engine.cpp)
+endif()
+if(USE_ONNX)
+    list(APPEND AI_SOURCES src/ai/onnx_engine.cpp)
+endif()
+
 # Main library
 add_library(nass_x STATIC
     ${IO_SOURCES}
@@ -141,6 +194,7 @@ add_library(nass_x STATIC
     ${PIPELINE_SOURCES}
     ${CORE_SOURCES}
     ${GPU_SOURCES}
+    ${AI_SOURCES}
 )
 
 target_include_directories(nass_x PUBLIC ${FFMPEG_INCLUDE_DIRS})
@@ -150,6 +204,18 @@ target_link_libraries(nass_x PUBLIC Threads::Threads ${FFMPEG_LIBRARIES})
 if(USE_CUDA AND CUDAToolkit_FOUND)
     target_link_libraries(nass_x PUBLIC CUDA::cudart CUDA::cufft)
     set_target_properties(nass_x PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+endif()
+
+# TensorRT linkage (Phase 4)
+if(USE_TENSORRT AND TENSORRT_LIBRARY)
+    target_link_libraries(nass_x PRIVATE ${TENSORRT_LIBRARY} ${TENSORRT_PARSER_LIBRARY})
+endif()
+
+# ONNX Runtime linkage (Phase 4)
+if(USE_ONNX AND ONNX_LIBRARY)
+    target_link_libraries(nass_x PRIVATE ${ONNX_LIBRARY})
+elseif(USE_ONNX AND ONNXRuntime_FOUND)
+    target_link_libraries(nass_x PRIVATE ${ONNXRuntime_LIBRARIES})
 endif()
 
 # Executable for testing
@@ -168,6 +234,13 @@ if(BUILD_BENCHMARKS)
         target_link_libraries(nass_gpu_bench PRIVATE nass_x)
         set_target_properties(nass_gpu_bench PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
     endif()
+endif()
+
+# Examples
+option(BUILD_EXAMPLES "Build examples" ON)
+if(BUILD_EXAMPLES)
+    add_executable(ai_denoiser examples/ai_denoiser.cpp)
+    target_link_libraries(ai_denoiser PRIVATE nass_x)
 endif()
 
 # Install targets
@@ -190,4 +263,6 @@ if(USE_CUDA AND CUDAToolkit_FOUND)
     message(STATUS "  CUDA Version: ${CUDAToolkit_VERSION}")
     message(STATUS "  CUDA Architectures: ${CMAKE_CUDA_ARCHITECTURES}")
 endif()
+message(STATUS "  Use TensorRT: ${USE_TENSORRT}")
+message(STATUS "  Use ONNX Runtime: ${USE_ONNX}")
 message(STATUS "  Build Benchmarks: ${BUILD_BENCHMARKS}")
