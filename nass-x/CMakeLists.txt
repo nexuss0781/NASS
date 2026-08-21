@@ -50,6 +50,7 @@ endif()
 # Source files
 set(IO_SOURCES
     src/io/audio_reader.cpp
+    src/io/audio_writer.cpp
 )
 
 set(THREADING_SOURCES

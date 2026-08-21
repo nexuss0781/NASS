@@ -1,27 +1,24 @@
 ```
 # Build artifacts
-build/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
 *.o
+*.obj
 *.a
 *.so
-*.dylib
 *.dll
 *.exe
 *.out
 
+# CMake build directory
+build/
+cmake-build-*/
+
 # Dependencies
-.externalNativeBuild/
-.clang_complete
+vendor/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-*.swo
 
 # Environment
 .env
@@ -34,12 +31,87 @@ Makefile
 *.swp
 *.swo
 
-# Coverage reports
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
 coverage/
 htmlcov/
 .coverage
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Gradle
+.gradle/
+build/
+
+# Rust
+target/
+
+# Go
+*.out
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+.classpath
+.project
+
+# Julia
+julia-*/
+
+# Zig
+zig-cache/
+zig-out/
+
+# MyPy
+.mypy_cache/
+
+# PyTest
+.pytest_cache/
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

@@ -1,6 +1,6 @@
 /**
  * @file audio_reader.cpp
- * @brief Implementation of high-performance audio reader
+ * @brief Phase 2: Implementation of high-performance audio reader
  */
 
 #include "nass_x/audio_reader.hpp"
@@ -11,17 +11,85 @@
 
 namespace nass_x {
 
+// FrameQueueReader implementation
+FrameQueueReader::FrameQueueReader(size_t max_size) 
+    : max_size_(max_size)
+    , eof_(false) {}
+
+FrameQueueReader::~FrameQueueReader() {
+    clear();
+}
+
+bool FrameQueueReader::push(AudioFrame&& frame) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    
+    cv_not_full_.wait(lock, [this]() { return queue_.size() < max_size_ || eof_; });
+    
+    if (eof_) return false;
+    
+    queue_.push(std::move(frame));
+    
+    cv_not_empty_.notify_one();
+    return true;
+}
+
+bool FrameQueueReader::pop(AudioFrame& frame, int timeout_ms) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    
+    if (timeout_ms < 0) {
+        cv_not_empty_.wait(lock, [this]() { return !queue_.empty() || eof_; });
+    } else {
+        if (!cv_not_empty_.wait_for(lock, std::chrono::milliseconds(timeout_ms), 
+                         [this]() { return !queue_.empty() || eof_; })) {
+            return false;
+        }
+    }
+    
+    if (queue_.empty()) {
+        return eof_;
+    }
+    
+    frame = std::move(queue_.front());
+    queue_.pop();
+    
+    cv_not_full_.notify_one();
+    return true;
+}
+
+void FrameQueueReader::set_eof() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    eof_ = true;
+    cv_not_empty_.notify_all();
+    cv_not_full_.notify_all();
+}
+
+size_t FrameQueueReader::size() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return queue_.size();
+}
+
+void FrameQueueReader::clear() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    while (!queue_.empty()) {
+        queue_.pop();
+    }
+    eof_ = false;
+}
+
+// AudioReader implementation
 AudioReader::AudioReader(const std::string& filepath)
     : filepath_(filepath)
     , format_ctx_(nullptr)
     , codec_ctx_(nullptr)
     , swr_ctx_(nullptr)
     , fifo_(nullptr)
+    , hw_device_ctx_(nullptr)
     , stream_index_(-1)
     , position_(0)
     , eof_(false)
     , opened_(false)
-    , arena_(std::make_unique<nass::Arena>(16 * 1024 * 1024))
+    , hw_accel_enabled_(false)
+    , arena_(std::make_unique<nass::Arena>(32 * 1024 * 1024))
 {
     av_log_set_level(AV_LOG_ERROR);
 }
@@ -36,19 +104,24 @@ AudioReader::AudioReader(AudioReader&& other) noexcept
     , codec_ctx_(other.codec_ctx_)
     , swr_ctx_(other.swr_ctx_)
     , fifo_(other.fifo_)
+    , hw_device_ctx_(other.hw_device_ctx_)
     , format_(other.format_)
     , stream_index_(other.stream_index_)
     , position_(other.position_)
     , eof_(other.eof_)
     , opened_(other.opened_)
+    , hw_accel_enabled_(other.hw_accel_enabled_)
     , arena_(std::move(other.arena_))
+    , decode_threads_(std::move(other.decode_threads_))
 {
     other.format_ctx_ = nullptr;
     other.codec_ctx_ = nullptr;
     other.swr_ctx_ = nullptr;
     other.fifo_ = nullptr;
+    other.hw_device_ctx_ = nullptr;
     other.stream_index_ = -1;
     other.opened_ = false;
+    other.hw_accel_enabled_ = false;
 }
 
 AudioReader& AudioReader::operator=(AudioReader&& other) noexcept {
@@ -59,21 +132,47 @@ AudioReader& AudioReader::operator=(AudioReader&& other) noexcept {
         codec_ctx_ = other.codec_ctx_;
         swr_ctx_ = other.swr_ctx_;
         fifo_ = other.fifo_;
+        hw_device_ctx_ = other.hw_device_ctx_;
         format_ = other.format_;
         stream_index_ = other.stream_index_;
         position_ = other.position_;
         eof_ = other.eof_;
         opened_ = other.opened_;
+        hw_accel_enabled_ = other.hw_accel_enabled_;
         arena_ = std::move(other.arena_);
+        decode_threads_ = std::move(other.decode_threads_);
         
         other.format_ctx_ = nullptr;
         other.codec_ctx_ = nullptr;
         other.swr_ctx_ = nullptr;
         other.fifo_ = nullptr;
+        other.hw_device_ctx_ = nullptr;
         other.stream_index_ = -1;
         other.opened_ = false;
+        other.hw_accel_enabled_ = false;
     }
     return *this;
+}
+
+bool AudioReader::enable_hw_accel(const std::string& device_type) {
+    return init_hw_device(device_type);
+}
+
+bool AudioReader::init_hw_device(const std::string& device_type) {
+    enum AVHWDeviceType type = av_hwdevice_find_type_by_name(device_type.c_str());
+    if (type == AV_HWDEVICE_TYPE_NONE) {
+        std::cerr << "Hardware device type not supported: " << device_type << std::endl;
+        return false;
+    }
+    
+    int ret = av_hwdevice_ctx_create(&hw_device_ctx_, type, nullptr, nullptr, 0);
+    if (ret < 0) {
+        std::cerr << "Failed to create hardware device context" << std::endl;
+        return false;
+    }
+    
+    hw_accel_enabled_ = true;
+    return true;
 }
 
 bool AudioReader::open() {
@@ -115,6 +214,11 @@ bool AudioReader::open() {
         return false;
     }
     
+    // Enable hardware acceleration if configured
+    if (hw_accel_enabled_ && hw_device_ctx_) {
+        codec_ctx_->hw_device_ctx = av_buffer_ref(hw_device_ctx_);
+    }
+    
     ret = avcodec_parameters_to_context(codec_ctx_, codec_params);
     if (ret < 0) {
         std::cerr << "Error copying codec parameters" << std::endl;
@@ -123,7 +227,10 @@ bool AudioReader::open() {
         return false;
     }
     
-    codec_ctx_->thread_count = std::thread::hardware_concurrency();
+    // Multi-threaded decoding
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    if (num_threads == 0) num_threads = 4;
+    codec_ctx_->thread_count = static_cast<int>(num_threads);
     codec_ctx_->thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
     
     ret = avcodec_open2(codec_ctx_, codec, nullptr);
@@ -147,6 +254,7 @@ bool AudioReader::open() {
         format_.duration_samples = 0;
     }
     
+    // Initialize resampler
     swr_ctx_ = swr_alloc();
     if (!swr_ctx_) {
         std::cerr << "Error allocating resampler" << std::endl;
@@ -172,7 +280,8 @@ bool AudioReader::open() {
         return false;
     }
     
-    fifo_ = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, format_.channels, 1024);
+    // Create FIFO buffer with dynamic sizing
+    fifo_ = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, format_.channels, 2048);
     if (!fifo_) {
         std::cerr << "Error creating audio FIFO" << std::endl;
         swr_free(&swr_ctx_);
@@ -187,7 +296,7 @@ bool AudioReader::open() {
 
 bool AudioReader::read_frame(AudioFrame& frame) {
     if (!opened_) return false;
-    if (eof_) return false;
+    if (eof_ && av_audio_fifo_size(fifo_) == 0) return false;
     
     AVPacket* packet = av_packet_alloc();
     AVFrame* decoded_frame = av_frame_alloc();
@@ -195,13 +304,14 @@ bool AudioReader::read_frame(AudioFrame& frame) {
     bool got_frame = false;
     
     while (!got_frame) {
+        // Check if we have enough samples in FIFO
         if (av_audio_fifo_size(fifo_) >= codec_ctx_->frame_size) {
             frame.nb_samples = codec_ctx_->frame_size;
             frame.planes.resize(format_.channels);
             
             for (int c = 0; c < format_.channels; c++) {
                 frame.planes[c] = static_cast<float*>(
-                    arena_->allocate(frame.nb_samples * sizeof(float)));
+                    arena_->allocate(frame.nb_samples * sizeof(float), 64));
             }
             
             void** data = reinterpret_cast<void**>(frame.planes.data());
@@ -214,17 +324,19 @@ bool AudioReader::read_frame(AudioFrame& frame) {
             break;
         }
         
+        // Read next packet
         int ret = av_read_frame(format_ctx_, packet);
         if (ret < 0) {
             if (ret == AVERROR_EOF) {
                 eof_ = true;
+                // Drain remaining samples from FIFO
                 if (av_audio_fifo_size(fifo_) > 0) {
                     frame.nb_samples = av_audio_fifo_size(fifo_);
                     frame.planes.resize(format_.channels);
                     
                     for (int c = 0; c < format_.channels; c++) {
                         frame.planes[c] = static_cast<float*>(
-                            arena_->allocate(frame.nb_samples * sizeof(float)));
+                            arena_->allocate(frame.nb_samples * sizeof(float), 64));
                     }
                     
                     void** data = reinterpret_cast<void**>(frame.planes.data());
@@ -250,6 +362,7 @@ bool AudioReader::read_frame(AudioFrame& frame) {
             break;
         }
         
+        // Receive decoded frames
         while (ret >= 0) {
             ret = avcodec_receive_frame(codec_ctx_, decoded_frame);
             if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
@@ -259,6 +372,7 @@ bool AudioReader::read_frame(AudioFrame& frame) {
                 break;
             }
             
+            // Convert to float and push to FIFO
             AudioFrame temp_frame;
             if (convert_to_float(decoded_frame, temp_frame)) {
                 av_audio_fifo_write(fifo_, reinterpret_cast<void**>(temp_frame.planes.data()), 
@@ -279,11 +393,11 @@ bool AudioReader::convert_to_float(AVFrame* input, AudioFrame& output) {
     
     for (int c = 0; c < format_.channels; c++) {
         output.planes[c] = static_cast<float*>(
-            arena_->allocate(output.nb_samples * sizeof(float)));
+            arena_->allocate(output.nb_samples * sizeof(float), 64));
     }
     
     void** data = reinterpret_cast<void**>(output.planes.data());
-    int ret = swr_convert(swr_ctx_, data, output.nb_samples, 
+    int ret = swr_convert(swr_ctx_, reinterpret_cast<uint8_t**>(data), output.nb_samples, 
                          (const uint8_t**)input->extended_data, input->nb_samples);
     
     return ret > 0;
@@ -306,6 +420,15 @@ void AudioReader::read_all_async(FrameCallback callback, int num_threads) {
     }
 }
 
+void AudioReader::start_background_decode(FrameQueueReader& queue, int num_threads) {
+    if (!opened_) return;
+    
+    for (int t = 0; t < num_threads; t++) {
+        decode_threads_.emplace_back(&AudioReader::background_decode_thread, this, 
+                                     std::ref(queue), t);
+    }
+}
+
 void AudioReader::decode_thread(FrameCallback callback, int /*thread_id*/, int /*total_threads*/) {
     AudioFrame frame;
     while (read_frame(frame)) {
@@ -313,6 +436,16 @@ void AudioReader::decode_thread(FrameCallback callback, int /*thread_id*/, int /
             callback(std::move(frame));
         }
     }
+}
+
+void AudioReader::background_decode_thread(FrameQueueReader& queue, int /*thread_id*/) {
+    AudioFrame frame;
+    while (read_frame(frame)) {
+        if (!frame.is_eof) {
+            queue.push(std::move(frame));
+        }
+    }
+    queue.set_eof();
 }
 
 bool AudioReader::seek(int64_t sample) {
@@ -334,6 +467,14 @@ bool AudioReader::seek(int64_t sample) {
 }
 
 void AudioReader::close() {
+    // Wait for decode threads to finish
+    for (auto& thread : decode_threads_) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+    decode_threads_.clear();
+    
     if (fifo_) {
         av_audio_fifo_free(fifo_);
         fifo_ = nullptr;
@@ -346,11 +487,16 @@ void AudioReader::close() {
         avcodec_free_context(&codec_ctx_);
         codec_ctx_ = nullptr;
     }
+    if (hw_device_ctx_) {
+        av_buffer_unref(&hw_device_ctx_);
+        hw_device_ctx_ = nullptr;
+    }
     if (format_ctx_) {
         avformat_close_input(&format_ctx_);
         format_ctx_ = nullptr;
     }
     opened_ = false;
+    hw_accel_enabled_ = false;
 }
 
 } // namespace nass_x
