@@ -1,52 +1,45 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+```
+# Build artifacts
 build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
 
-# Virtual environments
-venv/
-env/
-ENV/
-.venv
+# Dependencies
+.externalNativeBuild/
+.clang_complete
 
-# IDE
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# OS generated files
 .DS_Store
 Thumbs.db
-
-# Project specific
-*.mp3
-*.m4a
-*.wav
-*.npz
-*.png
-!README.md
-
-# Shared memory artifacts (in case of crashes)
-/dev/shm/agi_*
-
-# Logs
-*.log
+```
