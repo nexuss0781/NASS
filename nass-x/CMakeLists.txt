@@ -1,10 +1,27 @@
 cmake_minimum_required(VERSION 3.20)
+
+# Check for CUDA first before enabling it
+set(USE_CUDA_INIT OFF)
+find_package(CUDAToolkit QUIET)
+if(CUDAToolkit_FOUND)
+    set(USE_CUDA_INIT ON)
+endif()
+
 project(NASS-X VERSION 1.0.0 LANGUAGES CXX)
+
+# Optionally add CUDA if available
+if(USE_CUDA_INIT)
+    enable_language(CUDA)
+endif()
 
 # C++20 Standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# CUDA Standard
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -15,6 +32,10 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
+
+# CUDA flags
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 # Position independent code for shared libraries
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -45,6 +66,22 @@ option(USE_MKL "Use Intel MKL for FFT" OFF)
 if(USE_MKL)
     find_package(MKL REQUIRED)
     add_definitions(-DNASS_USE_MKL)
+endif()
+
+# Optional: CUDA/cuFFT (Phase 3)
+option(USE_CUDA "Use CUDA for GPU acceleration" ON)
+if(USE_CUDA)
+    find_package(CUDAToolkit QUIET)
+    if(CUDAToolkit_FOUND)
+        message(STATUS "CUDA found: ${CUDAToolkit_VERSION}")
+        add_definitions(-DNASS_USE_CUDA)
+        
+        # Set CUDA architectures
+        set(CMAKE_CUDA_ARCHITECTURES "60;61;70;75;80;86" CACHE STRING "CUDA architectures")
+    else()
+        message(WARNING "CUDA not found, GPU acceleration disabled")
+        set(USE_CUDA OFF)
+    endif()
 endif()
 
 # Source files
@@ -83,6 +120,17 @@ set(CORE_SOURCES
     src/core/status.cpp
 )
 
+# GPU sources (Phase 3 - CUDA)
+set(GPU_SOURCES
+)
+if(USE_CUDA)
+    set(GPU_SOURCES
+        src/gpu/cuda_backend.cpp
+        src/gpu/fft_cuda.cu
+        src/gpu/gpu_engine.cpp
+    )
+endif()
+
 # Main library
 add_library(nass_x STATIC
     ${IO_SOURCES}
@@ -92,10 +140,17 @@ add_library(nass_x STATIC
     ${TENSOR_SOURCES}
     ${PIPELINE_SOURCES}
     ${CORE_SOURCES}
+    ${GPU_SOURCES}
 )
 
 target_include_directories(nass_x PUBLIC ${FFMPEG_INCLUDE_DIRS})
 target_link_libraries(nass_x PUBLIC Threads::Threads ${FFMPEG_LIBRARIES})
+
+# CUDA linkage (Phase 3)
+if(USE_CUDA AND CUDAToolkit_FOUND)
+    target_link_libraries(nass_x PUBLIC CUDA::cudart CUDA::cufft)
+    set_target_properties(nass_x PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+endif()
 
 # Executable for testing
 add_executable(nass_test tests/main.cpp)
@@ -106,6 +161,13 @@ option(BUILD_BENCHMARKS "Build benchmarks" ON)
 if(BUILD_BENCHMARKS)
     add_executable(nass_bench benchmarks/bench_stft.cpp)
     target_link_libraries(nass_bench PRIVATE nass_x)
+    
+    # GPU benchmark (Phase 3)
+    if(USE_CUDA AND CUDAToolkit_FOUND)
+        add_executable(nass_gpu_bench benchmarks/bench_gpu_stft.cpp)
+        target_link_libraries(nass_gpu_bench PRIVATE nass_x)
+        set_target_properties(nass_gpu_bench PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    endif()
 endif()
 
 # Install targets
@@ -123,4 +185,9 @@ message(STATUS "NASS-X Configuration:")
 message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "  Use MKL: ${USE_MKL}")
+message(STATUS "  Use CUDA: ${USE_CUDA}")
+if(USE_CUDA AND CUDAToolkit_FOUND)
+    message(STATUS "  CUDA Version: ${CUDAToolkit_VERSION}")
+    message(STATUS "  CUDA Architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+endif()
 message(STATUS "  Build Benchmarks: ${BUILD_BENCHMARKS}")
