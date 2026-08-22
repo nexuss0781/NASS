@@ -1,6 +1,6 @@
 #pragma once
 
-#include "neural_engine.hpp"
+#include "nass_x/ai/neural_engine.hpp"
 #include "nass_x/tensor/tensor.hpp"
 #include <memory>
 #include <vector>
@@ -11,43 +11,35 @@ namespace nass_x::ai {
 
 /**
  * @brief Real-time source separation module using spectral masking.
- * 
- * Takes a mixed audio tensor and outputs separated stems (e.g., Vocals, Drums, Bass, Other).
- * Uses a U-Net or Masking architecture via the underlying NeuralEngine.
  */
 class SourceSeparator {
 public:
-    enum class StemType {
-        VOCALS,
-        DRUMS,
-        BASS,
-        OTHER,
-        FULL_BAND
+    struct Config {
+        size_t window_size = 2048;
+        size_t hop_size = 512;
     };
 
-    explicit SourceSeparator(std::shared_ptr<NeuralEngine> engine);
-    
-    /**
-     * @brief Separate audio into specified stems.
-     * @param input Mixed audio tensor [Batch, Channels, Time]
-     * @param stems List of desired stem types to extract
-     * @return Map of StemType to separated audio tensors
-     */
-    std::unordered_map<StemType, Tensor> separate(
-        const Tensor& input, 
-        const std::vector<StemType>& stems);
+    explicit SourceSeparator(const std::string& model_path, const Config& config = Config());
 
-    /**
-     * @brief Get number of available stems from current model.
-     */
-    size_t getStemCount() const;
+    enum class SourceType {
+        VOCALS,
+        INSTRUMENTAL,
+        DRUMS,
+        BASS,
+        OTHER
+    };
+
+    Tensor separate(const Tensor& input_audio, SourceType target);
 
 private:
-    std::shared_ptr<NeuralEngine> engine_;
-    std::unordered_map<std::string, StemType> stem_map_;
-    
-    // Apply soft mask to spectrogram
-    Tensor apply_mask(const Tensor& spec, const Tensor& mask);
+    Config config_;
+    size_t window_size_;
+    size_t hop_size_;
+    std::vector<float> hann_window_;
+
+    Tensor generate_mask(const Tensor& spec, SourceType target);
+    Tensor stft(const Tensor& audio, int window_size, int hop_size);
+    Tensor istft(const Tensor& spec, int window_size, int hop_size, const std::vector<float>& window);
 };
 
-} // namespace nass_x::tensor_x::ai
+} // namespace nass_x::ai

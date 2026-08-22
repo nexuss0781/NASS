@@ -214,7 +214,7 @@ private:
     bool opened_;
     bool hw_accel_enabled_;
     
-    std::unique_ptr<nass::Arena> arena_;
+    std::unique_ptr<nass_x::tensor::Arena> arena_;
     std::vector<std::thread> decode_threads_;
 };
 

@@ -165,7 +165,7 @@ private:
     std::thread encode_thread_;
     std::atomic<bool> stop_encode_;
     
-    std::unique_ptr<nass::Arena> arena_;
+    std::unique_ptr<nass_x::tensor::Arena> arena_;
     uint64_t frames_written_;
     uint64_t samples_written_;
     int64_t pts_;

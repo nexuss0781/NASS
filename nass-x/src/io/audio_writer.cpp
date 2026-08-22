@@ -97,7 +97,7 @@ AudioWriter::AudioWriter(const std::string& filepath,
     , hw_accel_enabled_(false)
     , frame_queue_(std::make_unique<FrameQueueWriter>(128))
     , stop_encode_(false)
-    , arena_(std::make_unique<nass::Arena>(32 * 1024 * 1024))
+    , arena_(std::make_unique<nass_x::tensor::Arena>(32 * 1024 * 1024))
     , frames_written_(0)
     , samples_written_(0)
     , pts_(0)

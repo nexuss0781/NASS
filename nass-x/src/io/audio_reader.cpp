@@ -89,7 +89,7 @@ AudioReader::AudioReader(const std::string& filepath)
     , eof_(false)
     , opened_(false)
     , hw_accel_enabled_(false)
-    , arena_(std::make_unique<nass::Arena>(32 * 1024 * 1024))
+    , arena_(std::make_unique<nass_x::tensor::Arena>(32 * 1024 * 1024))
 {
     av_log_set_level(AV_LOG_ERROR);
 }
